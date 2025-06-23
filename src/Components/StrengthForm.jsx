@@ -14,7 +14,9 @@ export default function StrengthForm() {
     const [verticalGrade, setVerticalGrade] = useState(0);
     const [slabGrade, setSlabGrade] = useState(0);
     const [results, setResults] = useState([]);
-    const [weaknesses, setWeaknesses] = useState([]);
+    const [overHangAnalysis, setOverHangAnalysis] = useState("");
+    const [verticalAnalysis, setVerticalAnalysis] = useState("");
+    const [slabAnalysis, setSlabAnalysis] = useState("");
     const [message, setMessage] = useState("");
 
     const handleFSChange = (e) => {
@@ -104,7 +106,10 @@ export default function StrengthForm() {
             });
 
             const weaknesses = await res2.json();
-            setWeaknesses(weaknesses);
+
+            setOverHangAnalysis(weaknesses.overHangAnalysis);
+            setVerticalAnalysis(weaknesses.verticalAnalysis);
+            setSlabAnalysis(weaknesses.slabAnalysis);
             setMessage("Data submitted successfully!");
             setResults(result.slice(3, 6));
 
@@ -205,7 +210,7 @@ export default function StrengthForm() {
                 />
             </div>
             <div>
-                <label htmlFor='slab'>Max vertical grade climbed:</label>
+                <label htmlFor='slab'>Max slab grade climbed:</label>
                 <input
                     type="text"
                     id="slab"
@@ -215,10 +220,18 @@ export default function StrengthForm() {
             </div>
             <div>
                 <p>{message}</p>
-                <p>Results: </p>
+                <p>Expected grades: </p>
                 {results.map((item, idx) => <li>{formOrder[idx]}: {item}</li>)}
-                <p>Potential weaknesses: </p>
-                {weaknesses.map((item) => <li>{item}</li>)}
+                <p>Analysis: </p>
+                {(overHangAnalysis || verticalAnalysis || slabAnalysis) && (
+                    <div>
+
+                        <p>Overhang: {overHangAnalysis}</p>
+                        <p>Vertical: {verticalAnalysis}</p>
+                        <p>Slab: {slabAnalysis}</p>
+
+                    </div>
+                )}
             </div>
             <button type="submit">Submit</button>
 
