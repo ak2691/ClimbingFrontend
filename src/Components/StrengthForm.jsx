@@ -89,22 +89,24 @@ export default function StrengthForm() {
                 throw new Error("Reps must be between 1 and 15");
             }
             const result = await res.json();
-            let weakness = [];
-            if (result[3] > result[0]) {
-                weakness.push("Weak fingers for overhang");
-            }
-            if (result[3] > result[1]) {
-                weakness.push("Weak pulling strength for overhang");
-            }
-            if (result[4] > result[0]) {
-                weakness.push("Can improve finger strength for vertical climbs");
-            }
-            if (result[5] < result[3] && result[5] < result[4]) {
-                weakness.push("Slab climbing is a big weakness, don't neglect this style!");
-            }
-            setWeaknesses(weakness);
+            const dataToAnalyze = {
+                overHangGrade: parseInt(result[0]),
+                verticalGrade: parseInt(result[1]),
+                slabGrade: parseInt(result[2]),
+                calculatedFingerStrengthGrade: parseInt(result[3]),
+                calculatedPullingStrengthGrade: parseInt(result[4])
+
+            };
+            const res2 = await fetch("http://localhost:8080/api/weakness", {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(dataToAnalyze)
+            });
+
+            const weaknesses = await res2.json();
+            setWeaknesses(weaknesses);
             setMessage("Data submitted successfully!");
-            setResults(result.slice(0, 3));
+            setResults(result.slice(3, 6));
 
 
 
@@ -113,15 +115,15 @@ export default function StrengthForm() {
         }
 
 
-        setFingerStrength(0);
-        setPullingStrength(0);
-        setBodyweight(0);
-        setOverHangGrade(0);
-        setVerticalGrade(0);
-        setSlabGrade(0);
-        setHangTime(0);
-        setEdgeSize(0);
-        setReps(0);
+        // setFingerStrength(0);
+        // setPullingStrength(0);
+        // setBodyweight(0);
+        // setOverHangGrade(0);
+        // setVerticalGrade(0);
+        // setSlabGrade(0);
+        // setHangTime(0);
+        // setEdgeSize(0);
+        // setReps(0);
     };
     return (
 
