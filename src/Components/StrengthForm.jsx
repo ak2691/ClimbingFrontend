@@ -1,66 +1,37 @@
 
 
-
 import { useState } from 'react';
 export default function StrengthForm() {
     const formOrder = ["Finger strength grade", "Pulling strength grade", "Overall strength grade"]
-    const [fingerStrength, setFingerStrength] = useState(0);
-    const [hangTime, setHangTime] = useState(0);
-    const [edgeSize, setEdgeSize] = useState(0);
-    const [pullingStrength, setPullingStrength] = useState(0);
-    const [reps, setReps] = useState(0);
-    const [bodyweight, setBodyweight] = useState(0);
-    const [overHangGrade, setOverHangGrade] = useState(0);
-    const [verticalGrade, setVerticalGrade] = useState(0);
-    const [slabGrade, setSlabGrade] = useState(0);
     const [results, setResults] = useState([]);
     const [overHangAnalysis, setOverHangAnalysis] = useState("");
     const [verticalAnalysis, setVerticalAnalysis] = useState("");
     const [slabAnalysis, setSlabAnalysis] = useState("");
     const [message, setMessage] = useState("");
+    const [form, setform] = useState({
+        fingerStrength: "", pullingStrength: "", bodyweight: "", overhang: "", vertical: "",
+        slab: "", hangtime: "", reps: ""
+    });
+    const [analysisTwo, setAnalysisTwo] = useState([]);
 
-    const handleFSChange = (e) => {
-        setFingerStrength((s) => e.target.value);
-    }
-    const handleHTChange = (e) => {
-        setHangTime(e.target.value);
-    }
-    const handleESChange = (e) => {
-        setEdgeSize(e.target.value);
-    }
-    const handlePSChange = (e) => {
-        setPullingStrength((s) => e.target.value);
-    }
-    const handleBWChange = (e) => {
-        setBodyweight((s) => e.target.value);
-    }
-    const handleOHChange = (e) => {
-        setOverHangGrade(e.target.value);
-    }
-    const handleVTChange = (e) => {
-        setVerticalGrade(e.target.value);
-    }
-    const handleSBChange = (e) => {
-        setSlabGrade(e.target.value);
-    }
-    const handleRepsChange = (e) => {
-        setReps(e.target.value);
-    }
+    const handleChange = (e) => {
+        setform((prev) => { return { ...prev, [e.target.name]: e.target.value } })
+    };
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Finger Strength:', fingerStrength);
-        console.log('Pulling Strength:', pullingStrength);
+        console.log('Finger Strength:', form.fingerStrength);
+        console.log('Pulling Strength:', form.pullingStrength);
 
         const formData = {
-            fingerStrength: parseInt(fingerStrength),
-            pullingStrength: parseInt(pullingStrength),
-            bodyweight: parseInt(bodyweight),
-            overHangGrade: parseInt(overHangGrade),
-            verticalGrade: parseInt(verticalGrade),
-            slabGrade: parseInt(slabGrade),
-            hangTime: parseInt(hangTime),
-            edgeSize: parseInt(edgeSize),
-            reps: parseInt(reps)
+            fingerStrength: parseInt(form.fingerStrength),
+            pullingStrength: parseInt(form.pullingStrength),
+            bodyweight: parseInt(form.bodyweight),
+            overHangGrade: parseInt(form.overhang),
+            verticalGrade: parseInt(form.vertical),
+            slabGrade: parseInt(form.slab),
+            hangTime: parseInt(form.hangtime),
+            edgeSize: parseInt(form.edgesize),
+            reps: parseInt(form.reps)
         }
 
         try {
@@ -73,23 +44,34 @@ export default function StrengthForm() {
                 const error = await res.json();
                 throw new Error(error.message || "Server error");
             }
-            if (bodyweight < 70) {
+            let isValid = true;
+            for (const key in form) {
+                if (form[key].trim() === "") {
+                    isValid = false;
+                }
+            }
+            if (!isValid) {
+                setMessage("");
+                throw new Error("All fields must be filled");
+            }
+            if (form.bodyweight < 70) {
                 setMessage("");
                 throw new Error("Bodyweight must be greater than 70 lbs");
             }
-            if (hangTime < 5 || hangTime > 30) {
+            if (form.hangtime < 5 || form.hangtime > 30) {
                 setMessage("");
                 throw new Error("Hang time must be between 5-30 seconds");
 
             }
-            if (edgeSize < 6 || edgeSize > 25) {
+            if (form.edgesize < 6 || form.edgesize > 25) {
                 setMessage("");
                 throw new Error("Edge size must be between 6 mm and 25 mm");
             }
-            if (reps < 1 || reps > 15) {
+            if (form.reps < 1 || form.reps > 15) {
                 setMessage("");
                 throw new Error("Reps must be between 1 and 15");
             }
+
             const result = await res.json();
             const dataToAnalyze = {
                 overHangGrade: parseInt(result[0]),
@@ -99,7 +81,7 @@ export default function StrengthForm() {
                 calculatedPullingStrengthGrade: parseInt(result[4])
 
             };
-            const res2 = await fetch("http://localhost:8080/api/weakness", {
+            const res2 = await fetch("http://localhost:8080/api/analyzefirst", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(dataToAnalyze)
@@ -107,6 +89,14 @@ export default function StrengthForm() {
 
             const weaknesses = await res2.json();
 
+
+            const res3 = await fetch("http://localhost:8080/api/analyzesecond", {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(dataToAnalyze)
+            });
+            const recommendations = await res3.json();
+            setAnalysisTwo(recommendations);
             setOverHangAnalysis(weaknesses.overHangAnalysis);
             setVerticalAnalysis(weaknesses.verticalAnalysis);
             setSlabAnalysis(weaknesses.slabAnalysis);
@@ -131,98 +121,113 @@ export default function StrengthForm() {
         // setReps(0);
     };
     return (
+        <div className="form">
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <label htmlFor="bodyweight">Bodyweight: </label>
+                    <input
+                        type="text"
+                        id="bodyweight"
+                        name="bodyweight"
+                        value={form.bodyweight}
+                        onChange={handleChange}
+                    />
+                </div>
 
-        <form onSubmit={handleSubmit}>
-            <div>
-                <label htmlFor="bodyweight">Bodyweight: </label>
-                <input
-                    type="text"
-                    id="bodyweight"
-                    value={bodyweight}
-                    onChange={handleBWChange}
-                />
-            </div>
-
-            <div>
-                <label htmlFor="fingerStrength">Max weight hang:</label>
-                <input
-                    type="text"
-                    id="fingerStrength"
-                    value={fingerStrength}
-                    onChange={handleFSChange}
-                />
+                <div>
+                    <label htmlFor="fingerStrength">Max weight hang:</label>
+                    <input
+                        type="text"
+                        id="fingerStrength"
+                        name="fingerStrength"
+                        value={form.fingerStrength}
+                        onChange={handleChange}
+                    />
 
 
-            </div>
-            <div>
-                <label htmlFor="hangtime">Hang time:</label>
-                <input
-                    type="text"
-                    id="hangtime"
-                    value={hangTime}
-                    onChange={handleHTChange}
-                />
-            </div>
-            <div>
-                <label htmlFor="edgesize">Edge size:</label>
-                <input
-                    type="text"
-                    id="edgesize"
-                    value={edgeSize}
-                    onChange={handleESChange}
-                />
-            </div>
-            <div>
-                <label htmlFor="pullingStrength">Max weight pulled:</label>
-                <input
-                    type="text"
-                    id="pullingStrength"
-                    value={pullingStrength}
-                    onChange={handlePSChange}
-                />
-            </div>
-            <div>
-                <label htmlFor="reps">Number of pull-ups:</label>
-                <input
-                    type="text"
-                    id="reps"
-                    value={reps}
-                    onChange={handleRepsChange}
-                />
-            </div>
+                </div>
+                <div>
+                    <label htmlFor="hangtime">Hang time:</label>
+                    <input
+                        type="text"
+                        id="hangtime"
+                        name="hangtime"
+                        value={form.hangtime}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <label htmlFor="edgesize">Edge size:</label>
+                    <input
+                        type="text"
+                        id="edgesize"
+                        name="edgesize"
+                        value={form.edgeSize}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <label htmlFor="pullingStrength">Max weight pulled:</label>
+                    <input
+                        type="text"
+                        id="pullingStrength"
+                        name="pullingStrength"
+                        value={form.pullingStrength}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <label htmlFor="reps">Number of pull-ups:</label>
+                    <input
+                        type="text"
+                        id="reps"
+                        name="reps"
+                        value={form.reps}
+                        onChange={handleChange}
+                    />
+                </div>
 
-            <div>
-                <label htmlFor="overhang">Max overhang grade climbed:</label>
-                <input
-                    type="text"
-                    id="overhang"
-                    value={overHangGrade}
-                    onChange={handleOHChange}
-                />
-            </div>
-            <div>
-                <label htmlFor="vertical">Max vertical grade climbed:</label>
-                <input
-                    type="text"
-                    id="vertical"
-                    value={verticalGrade}
-                    onChange={handleVTChange}
-                />
-            </div>
-            <div>
-                <label htmlFor='slab'>Max slab grade climbed:</label>
-                <input
-                    type="text"
-                    id="slab"
-                    value={slabGrade}
-                    onChange={handleSBChange}
-                />
-            </div>
+                <div>
+                    <label htmlFor="overhang">Max overhang grade climbed:</label>
+                    <input
+                        type="text"
+                        id="overhang"
+                        name="overhang"
+                        value={form.overhang}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <label htmlFor="vertical">Max vertical grade climbed:</label>
+                    <input
+                        type="text"
+                        id="vertical"
+                        name="vertical"
+                        value={form.vertical}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <label htmlFor='slab'>Max slab grade climbed:</label>
+                    <input
+                        type="text"
+                        id="slab"
+                        name="slab"
+                        value={form.slab}
+                        onChange={handleChange}
+                    />
+                </div>
+
+                <button type="submit">Submit</button>
+
+
+            </form>
+
             <div>
                 <p>{message}</p>
-                <p>Expected grades: </p>
+                {results.length != 0 && <p>Expected grades: </p>}
                 {results.map((item, idx) => <li>{formOrder[idx]}: {item}</li>)}
-                <p>Analysis: </p>
+                {(overHangAnalysis || verticalAnalysis || slabAnalysis) && <p>Analysis: </p>}
                 {(overHangAnalysis || verticalAnalysis || slabAnalysis) && (
                     <div>
 
@@ -233,10 +238,21 @@ export default function StrengthForm() {
                     </div>
                 )}
             </div>
-            <button type="submit">Submit</button>
+            <div>
+                {analysisTwo.length != 0 && <p>In-depth analysis:</p>}
+                {(analysisTwo) && analysisTwo.map((item) =>
+                    <>
+                        <p>{item.title}</p>
+                        <p>{item.mentality}</p>
+                        <p>{item.routines.map((i) => <li>{i.name}</li>)}</p>
+                    </>
 
 
-        </form>
+
+                )}
+            </div>
+        </div>
+
     )
 
 }

@@ -1,7 +1,7 @@
 export default function TempHome() {
     return (
         <div>
-            <p>WELCOME TO THE HOME PAGE</p>
+            <a href="/calculator">WELCOME TO THE HOME PAGE</a>
         </div>
     )
 }
