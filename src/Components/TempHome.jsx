@@ -1,7 +1,9 @@
 export default function TempHome() {
     return (
         <div>
-            <a href="/calculator">WELCOME TO THE HOME PAGE</a>
+            <a href="/login">Login</a>
+            <div></div>
+            <a href="/register">Register</a>
         </div>
     )
 }

@@ -17,6 +17,15 @@ export default function StrengthForm() {
     const handleChange = (e) => {
         setform((prev) => { return { ...prev, [e.target.name]: e.target.value } })
     };
+    const AuthWithFetch = async (url, options = {}) => {
+        const token = localStorage.getItem('jwtToken');
+        const headers = options.headers || {};
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+        const config = { ...options, headers: headers };
+        return fetch(url, config);
+    }
     const handleSubmit = async (e) => {
         e.preventDefault();
         console.log('Finger Strength:', form.fingerStrength);
@@ -35,12 +44,16 @@ export default function StrengthForm() {
         }
 
         try {
-            const res = await fetch("http://localhost:8080/calculator", {
+            const res = await AuthWithFetch("http://localhost:8080/calculator", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData),
+                credentials: 'include'
             })
             if (!res.ok) {
+                if (res.status === 401) {
+                    throw new Error("Login to use calculator");
+                }
                 const error = await res.json();
                 throw new Error(error.message || "Server error");
             }
@@ -81,19 +94,21 @@ export default function StrengthForm() {
                 calculatedPullingStrengthGrade: parseInt(result[4])
 
             };
-            const res2 = await fetch("http://localhost:8080/api/analyzefirst", {
+            const res2 = await AuthWithFetch("http://localhost:8080/api/analyzefirst", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(dataToAnalyze)
+                body: JSON.stringify(dataToAnalyze),
+                credentials: 'include'
             });
 
             const weaknesses = await res2.json();
 
 
-            const res3 = await fetch("http://localhost:8080/api/analyzesecond", {
+            const res3 = await AuthWithFetch("http://localhost:8080/api/analyzesecond", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(dataToAnalyze)
+                body: JSON.stringify(dataToAnalyze),
+                credentials: 'include'
             });
             const recommendations = await res3.json();
             setAnalysisTwo(recommendations);
@@ -106,7 +121,10 @@ export default function StrengthForm() {
 
 
         } catch (e) {
+
             setMessage(`Submission failed: ${e.message}`)
+
+
         }
 
 

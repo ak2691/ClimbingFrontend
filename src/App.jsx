@@ -3,7 +3,8 @@ import { Routes, Route } from 'react-router-dom'
 import './App.css'
 import StrengthForm from "./Components/StrengthForm"
 import TempHome from "./Components/TempHome"
-
+import LoginForm from './Components/LoginForm'
+import RegisterForm from './Components/RegisterForm'
 function App() {
 
 
@@ -11,7 +12,9 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<TempHome />} />
+        <Route path="/login" element={<LoginForm />} />
         <Route path="/calculator" element={<StrengthForm />} />
+        <Route path="/register" element={<RegisterForm />} />
       </Routes>
 
 
