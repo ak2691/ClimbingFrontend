@@ -1,6 +1,7 @@
 
 
 import { useState } from 'react';
+import { AuthFetch } from './AuthFetch';
 export default function StrengthForm() {
     const formOrder = ["Finger strength grade", "Pulling strength grade", "Overall strength grade"]
     const [results, setResults] = useState([]);
@@ -17,15 +18,7 @@ export default function StrengthForm() {
     const handleChange = (e) => {
         setform((prev) => { return { ...prev, [e.target.name]: e.target.value } })
     };
-    const AuthWithFetch = async (url, options = {}) => {
-        const token = localStorage.getItem('jwtToken');
-        const headers = options.headers || {};
-        if (token) {
-            headers['Authorization'] = 'Bearer ' + token;
-        }
-        const config = { ...options, headers: headers };
-        return fetch(url, config);
-    }
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         console.log('Finger Strength:', form.fingerStrength);
@@ -44,7 +37,7 @@ export default function StrengthForm() {
         }
 
         try {
-            const res = await AuthWithFetch("http://localhost:8080/calculator", {
+            const res = await AuthFetch("http://localhost:8080/calculator", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(formData),
@@ -94,7 +87,7 @@ export default function StrengthForm() {
                 calculatedPullingStrengthGrade: parseInt(result[4])
 
             };
-            const res2 = await AuthWithFetch("http://localhost:8080/api/analyzefirst", {
+            const res2 = await AuthFetch("http://localhost:8080/api/analyzefirst", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(dataToAnalyze),
@@ -104,7 +97,7 @@ export default function StrengthForm() {
             const weaknesses = await res2.json();
 
 
-            const res3 = await AuthWithFetch("http://localhost:8080/api/analyzesecond", {
+            const res3 = await AuthFetch("http://localhost:8080/api/analyzesecond", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(dataToAnalyze),
