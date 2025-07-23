@@ -14,7 +14,7 @@ export default function RegisterForm() {
 
         };
         try {
-            const res = await fetch("http://localhost:8080/register", {
+            const res = await fetch("http://localhost:8080/api/register", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(formData),

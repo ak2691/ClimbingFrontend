@@ -37,7 +37,7 @@ export default function StrengthForm() {
         }
 
         try {
-            const res = await AuthFetch("http://localhost:8080/calculator", {
+            const res = await AuthFetch("http://localhost:8080/api/calculator", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(formData),

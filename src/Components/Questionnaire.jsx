@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { AuthFetch } from "./AuthFetch";
 import ContinueButton from "../DesignComponents/ContinueButton"
+import { Save } from 'lucide-react';
+
 export default function Questionnaire() {
     const [selectedStyles, setSelectedStyles] = useState({
         crimps: 0,
@@ -20,8 +22,29 @@ export default function Questionnaire() {
     const [selectedAnswers, setSelectedAnswers] = useState({});
     const [message, setMessage] = useState("");
     const [surveyMessage, setSurveyMessage] = useState("");
+    const [saveMessage, setSaveMessage] = useState("");
     const [finalResults, setFinalResults] = useState({});
     const [showRoutine, setShowRoutine] = useState(false);
+
+    const handleSave = async () => {
+        const saveData = { exerciseIds: finalResults.exerciseList, userId: parseInt(finalResults.userId) };
+        try {
+            const res = await AuthFetch("http://localhost:8080/api/saveroutine", {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(saveData),
+                credentials: 'include'
+            })
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message);
+            }
+            setSaveMessage("Saved successfully!");
+        } catch (e) {
+            setSaveMessage(e.message);
+            console.log(e.message);
+        }
+    }
     const toggleStyle = (style) => {
         setSelectedStyles(prev => ({
             ...prev,
@@ -43,12 +66,17 @@ export default function Questionnaire() {
 
     const submitStyles = async () => {
         try {
-            const res = await fetch("http://localhost:8080/api/generatequestions", {
+            const res = await AuthFetch("http://localhost:8080/api/generatequestions", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(selectedStyles),
                 credentials: 'include'
             })
+            if (!res.ok) {
+                const err = await res.json();
+                console.log("error was found");
+                throw new Error(err.message);
+            }
             const response = await res.json();
             setQuestions((prev) => ({
                 ...prev, ...Object.keys(response).reduce((acc, key) => {
@@ -63,12 +91,12 @@ export default function Questionnaire() {
             });
 
             setSelectedAnswers((prev) => ({ ...prev, ...obj }));
-            console.log(response["underclings"].answer_choices);
 
-            setMessage("successful");
+
+
             setShowSurvey(true);
         } catch (e) {
-            setMessage("Submission failed due to server error");
+            setMessage("Submission failed due to server error: " + e.message);
         }
     }
 
@@ -116,7 +144,7 @@ export default function Questionnaire() {
 
         }
         try {
-            const userId = await fetch("http://localhost:8080/api/userid", {
+            const userId = await AuthFetch("http://localhost:8080/api/userid", {
                 method: 'POST',
                 headers: { 'content-type': 'text/plain' },
                 body: jwtToken,
@@ -127,8 +155,9 @@ export default function Questionnaire() {
                 throw new Error(error.message);
             }
             console.log(userId);
+
             data.userId = await userId.json();
-            const res = await fetch("http://localhost:8080/api/generateroutine", {
+            const res = await AuthFetch("http://localhost:8080/api/generateroutine", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(data),
@@ -161,6 +190,8 @@ export default function Questionnaire() {
 
 
     */
+
+    if (message) return <div>{message}</div>
     return (
         <>
             <div>
@@ -247,7 +278,34 @@ export default function Questionnaire() {
                             </div>
                             {surveyMessage && (<p>{surveyMessage}</p>)}
                         </div>
-                    ) : (finalResults.displayExercises.map((exercise) => <li>{exercise.name} - {exercise.description}</li>))
+                    ) : (<div className="max-w-2xl mx-auto p-6 bg-gradient-to-br from-white via-amber-50 to-yellow-100 rounded-xl shadow-lg border border-yellow-200 relative">
+
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
+                            Here is a generated routine for your weaknesses
+                        </h2>
+
+
+                        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-inner border border-yellow-300/50">
+                            <ul className="space-y-3">
+                                {finalResults.displayExercises.map((exercise, index) => (
+                                    <li key={index} className="flex flex-col p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg border border-yellow-200 hover:shadow-md transition-shadow">
+                                        <span className="font-semibold text-gray-800 text-lg">{exercise.name}</span>
+                                        <span className="text-gray-600 text-sm mt-1">{exercise.description}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+
+                        <button
+                            onClick={handleSave}
+                            className="absolute bottom-4 right-4 flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 font-medium"
+                        >
+                            <Save size={18} />
+                            Save
+                        </button>
+                        {saveMessage && (<p>{saveMessage}</p>)}
+                    </div>)
 
 
 
