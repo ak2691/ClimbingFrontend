@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import { ChevronDown, ChevronUp, User, TrendingUp, List } from 'lucide-react';
 import { AuthFetch } from './AuthFetch';
+import StatsComponent from './StatsComponent';
 export default function UserProfile() {
     const [username, setUsername] = useState("");
     const [userprofile, setUserprofile] = useState({});
@@ -41,6 +42,23 @@ export default function UserProfile() {
         }
         fetchUserProfile();
     }, [])
+    const editProfile = async (formData) => {
+        try {
+            const res = await AuthFetch("http://localhost:8080/api/editprofile", {
+                method: 'PUT',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(formData),
+                credentials: 'include'
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message);
+            }
+
+        } catch (e) {
+            setError("profile did not get edited due to: " + e.message);
+        }
+    }
     const nameRoutine = async (e) => {
         e.preventDefault();
         if (newRoutineName.trim()) {
@@ -161,73 +179,7 @@ export default function UserProfile() {
                 {/* Main Content Grid */}
                 <div className="grid lg:grid-cols-2 gap-8">
                     {/* Stats Section - Left Side */}
-                    <div className="bg-white rounded-xl shadow-lg border border-amber-100 p-6">
-                        <div className="flex items-center mb-6">
-                            <TrendingUp className="w-6 h-6 text-amber-600 mr-3" />
-                            <h2 className="text-2xl font-semibold text-gray-800">Your Stats</h2>
-                        </div>
-
-                        <div className="space-y-4">
-                            {/* Physical Stats */}
-                            <div className="bg-gradient-to-r from-amber-50 to-white rounded-lg p-4 border border-amber-100">
-                                <h3 className="font-semibold text-amber-800 mb-3">Physical</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold text-gray-800">{userprofile.weightLb}</div>
-                                        <div className="text-sm text-gray-600">Weight (lb)</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold text-gray-800">{userprofile.heightIn}"</div>
-                                        <div className="text-sm text-gray-600">Height</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Climbing Grades */}
-                            <div className="bg-gradient-to-r from-amber-50 to-white rounded-lg p-4 border border-amber-100">
-                                <h3 className="font-semibold text-amber-800 mb-3">Climbing Grades</h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-700">Vertical</span>
-                                        <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                            V{userprofile.verticalGrade}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-700">Overhang</span>
-                                        <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                            V{userprofile.overhangGrade}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-700">Slab</span>
-                                        <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                            V{userprofile.slabGrade}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Strength Grades */}
-                            <div className="bg-gradient-to-r from-amber-50 to-white rounded-lg p-4 border border-amber-100">
-                                <h3 className="font-semibold text-amber-800 mb-3">Strength</h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-700">Finger Strength</span>
-                                        <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                            V{userprofile.fingerStrengthGrade}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-700">Pulling Strength</span>
-                                        <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                            V{userprofile.pullingStrengthGrade}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <StatsComponent user={userprofile} editProfile={editProfile} />
 
                     {/* Routines Section - Right Side */}
                     <div className="bg-white rounded-xl shadow-lg border border-amber-100 p-6">
