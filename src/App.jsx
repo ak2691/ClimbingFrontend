@@ -11,6 +11,8 @@ import UserProfile from "./Components/UserProfile"
 import Navbar from "./Components/Navbar"
 import Exercises from './Components/Exercises'
 import CoachBot from './Components/CoachBot'
+import UserPending from './Components/UserPending'
+import AdminPending from './Components/AdminPending'
 function App() {
 
 
@@ -27,6 +29,8 @@ function App() {
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/exercises" element={<Exercises />} />
         <Route path="/chatbot" element={<CoachBot />} />
+        <Route path="/pending" element={<UserPending />} />
+        <Route path="/admin/pending" element={<AdminPending />} />
       </Routes>
 
 

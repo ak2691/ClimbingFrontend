@@ -1,13 +1,20 @@
-import { useState, useMemo } from "react";
-import { useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useQuill } from 'react-quilljs';
+
 import { AuthFetch } from "./AuthFetch";
+import ExerciseForm from "./ExerciseForm";
+import { X } from 'lucide-react';
 export default function Exercises() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
+    const [requestPopUp, setRequestPopUp] = useState(false);
+    const [selectedExercise, setSelectedExercise] = useState(null);
+
     const exercisesPerPage = 10;
+
     useEffect(() => {
         const fetchExercises = async () => {
             setLoading(true);
@@ -53,6 +60,17 @@ export default function Exercises() {
     const startIndex = (currentPage - 1) * exercisesPerPage;
     const currentExercises = filteredExercises.slice(startIndex, startIndex + exercisesPerPage);
 
+    const handleRequestPopUp = () => {
+        setRequestPopUp(!requestPopUp);
+
+    }
+    const openModal = (exercise, originalIndex) => {
+        setSelectedExercise({ ...exercise, originalIndex });
+    };
+
+    const closeModal = () => {
+        setSelectedExercise(null);
+    };
     const visiblePages = useMemo(() => {
         let startPage, endPage;
 
@@ -102,7 +120,7 @@ export default function Exercises() {
                         Movement Catalogue
                     </h1>
                     <div className="w-32 h-1 bg-gradient-to-r from-yellow-400 to-amber-600 mx-auto rounded-full"></div>
-                    <p className="text-gray-600 mt-6 text-lg max-w-2xl mx-auto">
+                    <p className="text-gray-600 mt-6 text-lg max-w-2xl mx-auto font-serif">
                         Discover a comprehensive collection of fundamental exercises designed to strengthen, condition, and enhance your physical performance.
                     </p>
                 </div>
@@ -136,7 +154,46 @@ export default function Exercises() {
                         )}
                     </div>
                 </div>
+                <div className="flex justify-between">
+                    <button onClick={handleRequestPopUp} className="flex items-center gap-2 px-6 py-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-medium rounded-lg border border-emerald-300 transition-all duration-200 hover:-translate-y-2 hover:shadow-lg">
+                        <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4v16m8-8H4"
+                            />
+                        </svg>
+                        REQUEST EXERCISE
+                    </button>
+                    <button
+                        onClick={() => window.location.href = '/pending'}
+                        className="flex items-center gap-2 px-6 py-3 bg-amber-100 hover:bg-amber-200 text-amber-800 font-medium rounded-lg border border-amber-300 transition-all duration-200 hover:-translate-y-2 hover:shadow-lg"
+                    >
+                        <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                        YOUR PENDING REQUEST
+                    </button>
+                </div>
 
+
+                {requestPopUp && (<ExerciseForm />)}
                 {/* Search Results Info */}
                 <div className="text-center mb-8">
                     {searchQuery ? (
@@ -190,12 +247,13 @@ export default function Exercises() {
                             return (
                                 <div
                                     key={originalIndex}
+                                    onClick={() => openModal(exercise, originalIndex)}
                                     className="group relative bg-white rounded-2xl p-6 shadow-lg border border-yellow-200 
-                           hover:shadow-2xl hover:-translate-y-2 hover:border-yellow-400 
-                           transition-all duration-300 ease-out cursor-pointer
-                           before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br 
-                           before:from-yellow-400/10 before:to-amber-500/10 before:opacity-0 
-                           hover:before:opacity-100 before:transition-opacity before:duration-300"
+                       hover:shadow-2xl hover:-translate-y-2 hover:border-yellow-400 
+                       transition-all duration-300 ease-out cursor-pointer
+                       before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br 
+                       before:from-yellow-400/10 before:to-amber-500/10 before:opacity-0 
+                       hover:before:opacity-100 before:transition-opacity before:duration-300"
                                 >
                                     {/* Golden accent bar */}
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 rounded-t-2xl transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
@@ -205,14 +263,15 @@ export default function Exercises() {
                                         <span className="text-white font-bold text-sm">{originalIndex + 1}</span>
                                     </div>
 
-                                    {/* Content */}
+                                    {/* Content - Only showing name now */}
                                     <div className="relative z-10">
                                         <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-yellow-700 transition-colors duration-200">
                                             {exercise.name}
                                         </h3>
 
-                                        <p className="text-gray-600 text-sm leading-relaxed group-hover:text-gray-700 transition-colors duration-200">
-                                            {exercise.description}
+                                        {/* Click to view hint */}
+                                        <p className="text-gray-400 text-sm italic group-hover:text-yellow-600 transition-colors duration-200">
+                                            Click to view details
                                         </p>
 
                                         {/* Decorative element */}
@@ -237,7 +296,50 @@ export default function Exercises() {
                         })}
                     </div>
                 )}
+                {selectedExercise && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl border border-yellow-200 relative">
+                            {/* Header */}
+                            <div className="bg-yellow-50 border-b border-yellow-100 p-6 relative">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center">
+                                            <span className="text-yellow-800 font-bold text-lg">{selectedExercise.originalIndex + 1}</span>
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-gray-800">{selectedExercise.name}</h2>
+                                    </div>
+                                    <button
+                                        onClick={closeModal}
+                                        className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors duration-200"
+                                    >
+                                        <X className="w-5 h-5 text-gray-600" />
+                                    </button>
+                                </div>
+                            </div>
 
+                            {/* Content */}
+                            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+                                <div className="prose max-w-none">
+                                    {/* This div will contain your React Quill content */}
+                                    <div
+                                        className="text-gray-700 leading-relaxed"
+                                        dangerouslySetInnerHTML={{ __html: selectedExercise.description }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="border-t border-gray-100 p-4 bg-gray-50">
+                                <button
+                                    onClick={closeModal}
+                                    className="w-full bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-semibold py-3 px-6 rounded-xl transition-all duration-200 border border-yellow-200 hover:border-yellow-300"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* Pagination Controls - only show if there are results and multiple pages */}
                 {filteredExercises.length > 0 && totalPages > 1 && (
                     <div className="flex justify-center items-center mt-12 space-x-4">

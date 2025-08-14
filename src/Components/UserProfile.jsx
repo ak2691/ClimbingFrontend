@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
-import { ChevronDown, ChevronUp, User, TrendingUp, List } from 'lucide-react';
+import { ChevronDown, ChevronUp, User, TrendingUp, List, Plus, X } from 'lucide-react';
 import { AuthFetch } from './AuthFetch';
 import StatsComponent from './StatsComponent';
 export default function UserProfile() {
@@ -8,6 +8,7 @@ export default function UserProfile() {
     const [userprofile, setUserprofile] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [newRoutineError, setNewRoutineError] = useState("");
     const [selectedRoutine, setSelectedRoutine] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showEditPopup, setShowEditPopup] = useState(false);
@@ -15,33 +16,53 @@ export default function UserProfile() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [exerciseToDelete, setExerciseToDelete] = useState(null);
     const [showDeleteRoutineConfirm, setShowDeleteRoutineConfirm] = useState(false);
+    const [showExercisePopUp, setShowExercisePopUp] = useState(false);
+    const [exercises, setExercises] = useState([]);
+    const [availableExercises, setAvailableExercises] = useState([]);
+    const [showNewRoutinePopUp, setShowNewRoutinePopUp] = useState(false);
+
     useEffect(() => {
         const jwt = localStorage.getItem('jwtToken');
-        const fetchUserProfile = async () => {
+        setLoading(true);
+        const fetchAllData = async () => {
             try {
-                setLoading(true);
-                const res = await AuthFetch("http://localhost:8080/api/profile", {
-                    method: 'POST',
-                    headers: { 'content-type': 'text/plain' },
-                    body: jwt,
-                    credentials: 'include'
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.message);
+                const [profileResponse, exercisesResponse] = await Promise.all([
+                    AuthFetch("http://localhost:8080/api/profile", {
+                        method: 'POST',
+                        headers: { 'content-type': 'text/plain' },
+                        body: jwt,
+                        credentials: 'include'
+                    }),
+                    AuthFetch("http://localhost:8080/api/exercises", {
+                        method: 'GET',
+                        headers: { 'content-type': 'application/json' },
+                        credentials: 'include'
+                    })
+                ]);
+
+                // Handle profile
+                if (profileResponse.ok) {
+                    const profile = await profileResponse.json();
+                    setUserprofile(profile);
                 }
-                const profile = await res.json();
-                setUserprofile(profile);
+
+                // Handle exercises
+                if (exercisesResponse.ok) {
+                    const exercisesData = await exercisesResponse.json();
+                    setExercises(exercisesData);
+                }
 
             } catch (e) {
-
+                console.error("Error fetching data:", e);
                 setError(e.message);
             } finally {
                 setLoading(false);
             }
-        }
-        fetchUserProfile();
-    }, [])
+        };
+
+        fetchAllData();
+    }, []);
+
     const editProfile = async (formData) => {
         try {
             const res = await AuthFetch("http://localhost:8080/api/editprofile", {
@@ -58,6 +79,45 @@ export default function UserProfile() {
         } catch (e) {
             setError("profile did not get edited due to: " + e.message);
         }
+    }
+
+    const saveRoutine = async () => {
+        const jwtToken = localStorage.getItem('jwtToken');
+        const savedroutine = { exerciseIds: [], userId: null, routine_name: newRoutineName };
+        try {
+            const userId = await AuthFetch("http://localhost:8080/api/userid", {
+                method: 'POST',
+                headers: { 'content-type': 'text/plain' },
+                body: jwtToken,
+                credentials: 'include'
+            });
+            if (!userId.ok) {
+                const err = await userId.json();
+                throw new Error(err.message);
+            }
+            const id = await userId.json();
+            savedroutine.userId = parseInt(id);
+            const res = await AuthFetch("http://localhost:8080/api/saveroutine", {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(savedroutine),
+                credentials: 'include'
+            })
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message);
+            }
+            const routine = await res.json();
+            setSelectedRoutine(routine);
+            setUserprofile({ ...userprofile, routines: [...userprofile.routines, routine] });
+            setShowNewRoutinePopUp(false);
+
+
+        } catch (e) {
+
+            setError(e.message);
+        }
+
     }
     const nameRoutine = async (e) => {
         e.preventDefault();
@@ -84,6 +144,13 @@ export default function UserProfile() {
         } catch (e) {
             setError("Something went terribly wrong!!!" + e.message);
         }
+    }
+    const handleAddExerciseClick = () => {
+
+        setShowExercisePopUp(true);
+        console.log(exercises);
+
+
     }
     const handleEditClick = () => {
         setNewRoutineName(selectedRoutine.routine_name);
@@ -128,10 +195,35 @@ export default function UserProfile() {
             setError("Something went terribly wrong!!!" + e.message);
         }
     }
+    const handleAddExercise = async (exercise) => {
+        const formData = { ...selectedRoutine, exerciseList: [...selectedRoutine.exerciseList, exercise] };
+        try {
+            const res = await AuthFetch("http://localhost:8080/api/editroutine", {
+                method: 'PUT',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(formData),
+                credentials: 'include'
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message);
+            }
+            setSelectedRoutine(formData)
+            setUserprofile({ ...userprofile, routines: userprofile.routines.map(routine => routine.routine_id === selectedRoutine.routine_id ? formData : routine) });
+            setShowDeleteConfirm(false);
+            setExerciseToDelete(null);
+
+        } catch (e) {
+            setError("Something went terribly wrong!!!" + e.message);
+        }
+    }
     const handleDeleteRoutine = () => {
         setShowDeleteRoutineConfirm(true);
     };
-
+    const getAvailableExercises = () => {
+        const currentExerciseIds = selectedRoutine.exerciseList.map(ex => ex.exercise_id);
+        return exercises.filter(ex => !currentExerciseIds.includes(ex.exercise_id));
+    };
     const confirmDeleteRoutine = async () => {
 
         try {
@@ -164,6 +256,7 @@ export default function UserProfile() {
     if (error) return <div>Error: {error}</div>;
     if (!userprofile) return <div>User not found</div>;
     return (
+
         <div className="min-h-screen bg-gradient-to-br from-white to-amber-50 p-6 font-inter">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
@@ -183,9 +276,18 @@ export default function UserProfile() {
 
                     {/* Routines Section - Right Side */}
                     <div className="bg-white rounded-xl shadow-lg border border-amber-100 p-6">
-                        <div className="flex items-center mb-6">
-                            <List className="w-6 h-6 text-amber-600 mr-3" />
-                            <h2 className="text-2xl font-semibold text-gray-800">Training Routines</h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center">
+                                <List className="w-6 h-6 text-amber-600 mr-3" />
+                                <h2 className="text-2xl font-semibold text-gray-800">Training Routines</h2>
+                            </div>
+                            <button
+                                onClick={() => setShowNewRoutinePopUp(true)} // You'll need to add this state
+                                className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                            >
+                                <Plus size={20} />
+                                Add Routine
+                            </button>
                         </div>
 
                         {userprofile.routines.length > 0 ? (
@@ -203,7 +305,7 @@ export default function UserProfile() {
                                     </button>
 
                                     {isDropdownOpen && (
-                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-amber-200 rounded-lg shadow-xl z-10">
+                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-amber-200 rounded-lg shadow-xl z-10 max-h-60 overflow-y-auto">
                                             {userprofile.routines.map((routine) => (
                                                 <button
                                                     key={routine.id}
@@ -217,7 +319,57 @@ export default function UserProfile() {
                                         </div>
                                     )}
                                 </div>
+                                {showNewRoutinePopUp && (
+                                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40">
+                                        <div className="bg-white rounded-lg p-6 w-96 max-w-md mx-4 relative">
+                                            {/* Close button in top right */}
+                                            <button
+                                                onClick={() => setShowNewRoutinePopUp(false)}
+                                                className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                                title="Close"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M6 18L18 6M6 6l12 12"
+                                                    />
+                                                </svg>
+                                            </button>
 
+                                            <h4 className="text-lg font-semibold text-gray-800 mb-4 pr-8">Create New Routine</h4>
+
+                                            <input
+                                                type="text"
+                                                value={newRoutineName}
+                                                onChange={(e) => setNewRoutineName(e.target.value)}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                                placeholder="Enter routine name"
+                                                autoFocus
+                                            />
+
+                                            <div className="flex gap-3 mt-4">
+                                                <button
+                                                    onClick={saveRoutine} // You'll need to implement this function
+                                                    className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2 px-4 rounded-md font-medium transition-colors"
+                                                    disabled={!newRoutineName.trim()} // Disable if name is empty
+                                                >
+                                                    Save
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setNewRoutineName(''); // Clear the input
+                                                        setShowNewRoutinePopUp(false); // Close popup
+                                                    }}
+                                                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-md font-medium transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 {/* Selected Routine Details */}
                                 {selectedRoutine && (
                                     <div className="bg-gradient-to-r from-amber-50 to-white rounded-lg p-6 border border-amber-200 mt-4">
@@ -230,13 +382,20 @@ export default function UserProfile() {
                                                 >
                                                     Edit
                                                 </button>
+                                                <button
+                                                    onClick={handleAddExerciseClick}
+                                                    className="ml-2 px-3 py-1 bg-green-200 hover:bg-green-300 text-green-800 rounded-md text-sm font-medium transition-colors"
+                                                    title="Add exercise"
+                                                >
+                                                    +
+                                                </button>
                                             </span>
                                         </h3>
                                         <div className="space-y-3">
                                             {selectedRoutine.exerciseList.map((exercise, idx) => (
                                                 <div key={idx} className="bg-white rounded-lg p-4 border border-amber-100 shadow-sm relative">
                                                     <button
-                                                        onClick={() => handleDeleteClick(exercise.exercise_id, idx)}
+                                                        onClick={handleDeleteClick}
                                                         className="absolute top-3 right-3 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                                                         title="Delete exercise"
                                                     >
@@ -260,7 +419,40 @@ export default function UserProfile() {
                                         </div>
                                     </div>
                                 )}
+                                {showExercisePopUp && (
+                                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                                        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h2 className="text-xl font-bold text-gray-800">Add Exercise</h2>
+                                                <button
+                                                    onClick={() => setShowExercisePopUp(false)}
+                                                    className="text-gray-500 hover:text-gray-700"
+                                                >
+                                                    <X size={24} />
+                                                </button>
+                                            </div>
 
+                                            <div className="space-y-3">
+                                                {getAvailableExercises().length === 0 ? (
+                                                    <p className="text-gray-500 text-center py-4">
+                                                        All exercises have been added to your routine!
+                                                    </p>
+                                                ) : (
+                                                    getAvailableExercises().map(exercise => (
+                                                        <div
+                                                            key={exercise.id}
+                                                            className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                                                            onClick={() => handleAddExercise(exercise)}
+                                                        >
+                                                            <h3 className="font-medium text-gray-800">{exercise.name}</h3>
+                                                            <p className="text-gray-600 text-sm mt-1">{exercise.description}</p>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 {/* Delete Confirmation Modal */}
                                 {showDeleteConfirm && (
                                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -411,6 +603,7 @@ export default function UserProfile() {
                     </div>
                 </div>
             </div>
+
         </div>
 
 

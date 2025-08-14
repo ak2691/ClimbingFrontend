@@ -44,6 +44,7 @@ export default function Navbar() {
                         >
                             Ask AI Coach!
                         </Link>
+
                     </div>
                 </div>
             </div>
