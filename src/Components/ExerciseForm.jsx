@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuill } from 'react-quilljs';
-import { AuthFetch } from "./AuthFetch";
+import { AuthFetch } from "./AuthContext";
 import 'quill/dist/quill.snow.css';
-export default function ExerciseForm() {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
+export default function ExerciseForm({ formData, setFormData }) {
+
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const { quill, quillRef } = useQuill({
@@ -31,10 +30,12 @@ export default function ExerciseForm() {
             if (file) {
                 const imageUrl = await uploadImage(file);
 
+                if (imageUrl) {
+                    const range = quill.getSelection();
+                    quill.insertEmbed(range.index, 'image', imageUrl);
+                }
 
 
-                const range = quill.getSelection();
-                quill.insertEmbed(range.index, 'image', imageUrl);
             }
         };
     };
@@ -43,32 +44,46 @@ export default function ExerciseForm() {
     useEffect(() => {
         if (quill) {
             quill.getModule('toolbar').addHandler('image', imageHandler);
+            quill.clipboard.dangerouslyPasteHTML(formData.description);
         }
+
     }, [quill]);
     useEffect(() => {
         if (quill) {
             quill.on('text-change', (delta, oldDelta, source) => {
-                setDescription(quill.root.innerHTML);
+                setFormData((prev) => ({ ...prev, description: quill.root.innerHTML }));
             })
         }
     }, [quill])
     const uploadImage = async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
+        try {
+            const formData = new FormData();
+            const jwtToken = localStorage.getItem('jwtToken');
+            formData.append('file', file);
+            formData.append('token', jwtToken);
 
-        const res = await AuthFetch('http://localhost:8080/api/images/upload', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include'
-        });
-        const imageUrl = await res.text();
-        return imageUrl;
+            const res = await AuthFetch('http://localhost:8080/api/images/upload', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err);
+            }
+            const imageUrl = await res.text();
+            return imageUrl;
+        } catch (e) {
+            setError(e.message);
+            return null;
+        }
+
     }
 
     const handleSave = async () => {
         const exerciseData = {
-            name,
-            description
+            name: formData.name,
+            description: formData.description
         };
         try {
             const response = await AuthFetch('http://localhost:8080/api/exercise-requests/request', {
@@ -79,20 +94,28 @@ export default function ExerciseForm() {
                 body: JSON.stringify(exerciseData),
                 credentials: 'include'
             });
+
+
             if (!response.ok) {
-                const res = await response.json();
-                throw new Error(res.message);
+                const res = await response.text();
+                throw new Error(res);
             }
+
+
             if (response.ok) {
                 const savedExercise = await response.json();
                 console.log('Exercise saved:', savedExercise);
-                setName('');
-                setDescription('');
+                setFormData((prev) => ({ ...prev, name: '', description: '' }));
+
+                if (quillRef.current) {
+                    quill.setText('');
+                    quill.setContents([]);
+                }
                 setMessage("Successfully requested!");
 
             }
         } catch (e) {
-            console.log(e);
+
             setError(e.message);
         }
 
@@ -114,8 +137,8 @@ export default function ExerciseForm() {
                     <input
                         type="text"
                         placeholder="Enter exercise name..."
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        value={formData.name}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                         className="w-full px-4 py-3 border-2 border-amber-200 rounded-lg 
                      focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200
                      bg-white text-amber-900 placeholder-amber-400

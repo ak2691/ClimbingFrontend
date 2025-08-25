@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AuthFetch } from "./AuthFetch";
+import { AuthFetch } from "./AuthContext";
 
 export default function CoachBot() {
     const [prompt, setPrompt] = useState('');
@@ -11,17 +11,17 @@ export default function CoachBot() {
     const [error, setError] = useState('');
     const handleSubmit = async () => {
         if (!prompt.trim()) return;
-
+        const jwtToken = localStorage.getItem('jwtToken');
         setIsLoading(true);
         try {
             const res = await AuthFetch("http://localhost:8080/api/gpt/chat", {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ message: prompt })
+                body: JSON.stringify({ message: prompt, jwtToken: jwtToken })
             });
             if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.message);
+                const err = await res.text();
+                throw new Error(err);
             }
             const result = await res.json();
             setResponse(result);
@@ -168,14 +168,14 @@ export default function CoachBot() {
                                 ) : (
                                     <div className="col-span-full bg-red-50 border border-red-200 rounded-lg p-4">
                                         <p className="text-red-700">
-                                            Error: Unable to display exercises. Please check the response format.
+                                            Error: Unable to display exercises.
                                         </p>
-                                        <details className="mt-2">
-                                            <summary className="cursor-pointer text-sm text-red-600">Show raw response</summary>
-                                            <pre className="mt-2 text-xs bg-red-100 p-2 rounded overflow-auto">
-                                                {JSON.stringify(response, null, 2)}
-                                            </pre>
-                                        </details>
+                                        <div className="mt-2">
+
+
+                                            {response}
+
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -187,7 +187,7 @@ export default function CoachBot() {
                             <p className="text-sm text-gray-600 text-center">
                                 {Array.isArray(response)
                                     ? `Showing ${response.length} exercise${response.length !== 1 ? 's' : ''}`
-                                    : 'Response format needs to be an array of exercises'
+                                    : null
                                 }
                             </p>
                         </div>

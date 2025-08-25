@@ -176,9 +176,15 @@ export default function AdminPending() {
                                                 <FileText className="w-4 h-4 mr-1 text-amber-500" />
                                                 Description
                                             </h4>
-                                            <p className="text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-lg">
-                                                {request.description}
-                                            </p>
+                                            {request.description && (
+                                                <div className="mt-4 w-full">
+                                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-h-[50vh] overflow-y-auto">
+                                                        <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: request.description }}>
+
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {isReviewing ? (
@@ -281,6 +287,6 @@ export default function AdminPending() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     )
 }

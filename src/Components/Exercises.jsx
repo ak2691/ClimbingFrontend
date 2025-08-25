@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuill } from 'react-quilljs';
 
-import { AuthFetch } from "./AuthFetch";
+import { AuthFetch } from "./AuthContext";
 import ExerciseForm from "./ExerciseForm";
 import { X } from 'lucide-react';
 export default function Exercises() {
@@ -12,6 +12,7 @@ export default function Exercises() {
     const [searchQuery, setSearchQuery] = useState('');
     const [requestPopUp, setRequestPopUp] = useState(false);
     const [selectedExercise, setSelectedExercise] = useState(null);
+    const [formData, setFormData] = useState({ name: '', description: '' });
 
     const exercisesPerPage = 10;
 
@@ -193,7 +194,7 @@ export default function Exercises() {
                 </div>
 
 
-                {requestPopUp && (<ExerciseForm />)}
+                {requestPopUp && (<ExerciseForm formData={formData} setFormData={setFormData} />)}
                 {/* Search Results Info */}
                 <div className="text-center mb-8">
                     {searchQuery ? (
@@ -297,15 +298,13 @@ export default function Exercises() {
                     </div>
                 )}
                 {selectedExercise && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-100">
                         <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl border border-yellow-200 relative">
                             {/* Header */}
                             <div className="bg-yellow-50 border-b border-yellow-100 p-6 relative">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-4">
-                                        <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center">
-                                            <span className="text-yellow-800 font-bold text-lg">{selectedExercise.originalIndex + 1}</span>
-                                        </div>
+
                                         <h2 className="text-2xl font-bold text-gray-800">{selectedExercise.name}</h2>
                                     </div>
                                     <button

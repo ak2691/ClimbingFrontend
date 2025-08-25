@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { ChevronDown, ChevronUp, User, TrendingUp, List, Plus, X } from 'lucide-react';
-import { AuthFetch } from './AuthFetch';
+import { AuthFetch } from './AuthContext';
 import StatsComponent from './StatsComponent';
+import ExerciseListPopUp from './ExerciseListPopUp';
 export default function UserProfile() {
     const [username, setUsername] = useState("");
     const [userprofile, setUserprofile] = useState({});
@@ -17,8 +18,9 @@ export default function UserProfile() {
     const [exerciseToDelete, setExerciseToDelete] = useState(null);
     const [showDeleteRoutineConfirm, setShowDeleteRoutineConfirm] = useState(false);
     const [showExercisePopUp, setShowExercisePopUp] = useState(false);
-    const [exercises, setExercises] = useState([]);
-    const [availableExercises, setAvailableExercises] = useState([]);
+    const [selectedExercise, setSelectedExercise] = useState(null);
+
+
     const [showNewRoutinePopUp, setShowNewRoutinePopUp] = useState(false);
 
     useEffect(() => {
@@ -26,19 +28,13 @@ export default function UserProfile() {
         setLoading(true);
         const fetchAllData = async () => {
             try {
-                const [profileResponse, exercisesResponse] = await Promise.all([
+                const profileResponse = await
                     AuthFetch("http://localhost:8080/api/profile", {
                         method: 'POST',
                         headers: { 'content-type': 'text/plain' },
                         body: jwt,
                         credentials: 'include'
-                    }),
-                    AuthFetch("http://localhost:8080/api/exercises", {
-                        method: 'GET',
-                        headers: { 'content-type': 'application/json' },
-                        credentials: 'include'
-                    })
-                ]);
+                    });
 
                 // Handle profile
                 if (profileResponse.ok) {
@@ -47,10 +43,7 @@ export default function UserProfile() {
                 }
 
                 // Handle exercises
-                if (exercisesResponse.ok) {
-                    const exercisesData = await exercisesResponse.json();
-                    setExercises(exercisesData);
-                }
+
 
             } catch (e) {
                 console.error("Error fetching data:", e);
@@ -80,7 +73,13 @@ export default function UserProfile() {
             setError("profile did not get edited due to: " + e.message);
         }
     }
+    const openModal = (exercise) => {
+        setSelectedExercise(exercise);
+    };
 
+    const closeModal = () => {
+        setSelectedExercise(null);
+    };
     const saveRoutine = async () => {
         const jwtToken = localStorage.getItem('jwtToken');
         const savedroutine = { exerciseIds: [], userId: null, routine_name: newRoutineName };
@@ -148,9 +147,12 @@ export default function UserProfile() {
     const handleAddExerciseClick = () => {
 
         setShowExercisePopUp(true);
-        console.log(exercises);
 
 
+
+    }
+    const handleCancelExercisePopUp = () => {
+        setShowExercisePopUp(false);
     }
     const handleEditClick = () => {
         setNewRoutineName(selectedRoutine.routine_name);
@@ -210,8 +212,7 @@ export default function UserProfile() {
             }
             setSelectedRoutine(formData)
             setUserprofile({ ...userprofile, routines: userprofile.routines.map(routine => routine.routine_id === selectedRoutine.routine_id ? formData : routine) });
-            setShowDeleteConfirm(false);
-            setExerciseToDelete(null);
+
 
         } catch (e) {
             setError("Something went terribly wrong!!!" + e.message);
@@ -220,10 +221,7 @@ export default function UserProfile() {
     const handleDeleteRoutine = () => {
         setShowDeleteRoutineConfirm(true);
     };
-    const getAvailableExercises = () => {
-        const currentExerciseIds = selectedRoutine.exerciseList.map(ex => ex.exercise_id);
-        return exercises.filter(ex => !currentExerciseIds.includes(ex.exercise_id));
-    };
+
     const confirmDeleteRoutine = async () => {
 
         try {
@@ -391,11 +389,11 @@ export default function UserProfile() {
                                                 </button>
                                             </span>
                                         </h3>
-                                        <div className="space-y-3">
+                                        <div className="space-y-3 max-h-96 overflow-y-auto">
                                             {selectedRoutine.exerciseList.map((exercise, idx) => (
-                                                <div key={idx} className="bg-white rounded-lg p-4 border border-amber-100 shadow-sm relative">
+                                                <div key={idx} onClick={() => openModal(exercise)} className="bg-white rounded-lg p-4 cursor-pointer border border-amber-100 shadow-sm relative">
                                                     <button
-                                                        onClick={handleDeleteClick}
+                                                        onClick={() => handleDeleteClick(exercise.exercise_id, idx)}
                                                         className="absolute top-3 right-3 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                                                         title="Delete exercise"
                                                     >
@@ -412,47 +410,67 @@ export default function UserProfile() {
                                                         {exercise.name} - {exercise.exercise_id}
                                                     </div>
                                                     <div className="text-sm text-gray-600 pr-8">
-                                                        {exercise.description}
+                                                        Click to view details
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 )}
-                                {showExercisePopUp && (
-                                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h2 className="text-xl font-bold text-gray-800">Add Exercise</h2>
-                                                <button
-                                                    onClick={() => setShowExercisePopUp(false)}
-                                                    className="text-gray-500 hover:text-gray-700"
-                                                >
-                                                    <X size={24} />
-                                                </button>
+                                {selectedExercise && (
+                                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                                        <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl border border-yellow-200 relative">
+                                            {/* Header */}
+                                            <div className="bg-yellow-50 border-b border-yellow-100 p-6 relative">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center space-x-4">
+                                                        <h2 className="text-2xl font-bold text-gray-800">{selectedExercise.name}</h2>
+                                                    </div>
+                                                    <div className="flex items-center space-x-3">
+                                                        <button
+                                                            onClick={() => {
+                                                                handleAddExercise(selectedExercise);
+                                                                closeModal();
+                                                            }}
+                                                            className="bg-green-100 hover:bg-green-200 text-green-800 font-semibold py-2 px-4 rounded-lg transition-colors duration-200 border border-green-200 hover:border-green-300"
+                                                        >
+                                                            Add Exercise
+                                                        </button>
+                                                        <button
+                                                            onClick={closeModal}
+                                                            className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors duration-200"
+                                                        >
+                                                            <X className="w-5 h-5 text-gray-600" />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            <div className="space-y-3">
-                                                {getAvailableExercises().length === 0 ? (
-                                                    <p className="text-gray-500 text-center py-4">
-                                                        All exercises have been added to your routine!
-                                                    </p>
-                                                ) : (
-                                                    getAvailableExercises().map(exercise => (
-                                                        <div
-                                                            key={exercise.id}
-                                                            className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
-                                                            onClick={() => handleAddExercise(exercise)}
-                                                        >
-                                                            <h3 className="font-medium text-gray-800">{exercise.name}</h3>
-                                                            <p className="text-gray-600 text-sm mt-1">{exercise.description}</p>
-                                                        </div>
-                                                    ))
-                                                )}
+                                            {/* Content */}
+                                            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+                                                <div className="prose max-w-none">
+                                                    {/* This div will contain your React Quill content */}
+                                                    <div
+                                                        className="text-gray-700 leading-relaxed"
+                                                        dangerouslySetInnerHTML={{ __html: selectedExercise.description }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Footer */}
+                                            <div className="border-t border-gray-100 p-4 bg-gray-50">
+                                                <button
+                                                    onClick={closeModal}
+                                                    className="w-full bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-semibold py-3 px-6 rounded-xl transition-all duration-200 border border-yellow-200 hover:border-yellow-300"
+                                                >
+                                                    Close
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 )}
+                                {showExercisePopUp && <ExerciseListPopUp handleAddExercise={handleAddExercise} selectedRoutine={selectedRoutine} handleCancelExercisePopUp={handleCancelExercisePopUp} />
+                                }
                                 {/* Delete Confirmation Modal */}
                                 {showDeleteConfirm && (
                                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

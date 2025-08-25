@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { AuthFetch } from "./AuthFetch";
+import { AuthFetch } from "./AuthContext";
 import ContinueButton from "../DesignComponents/ContinueButton"
 import { Save } from 'lucide-react';
 

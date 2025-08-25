@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AuthFetch } from './AuthFetch';
+import { AuthFetch } from './AuthContext';
 import { X, Clock, FileText, AlertCircle } from 'lucide-react';
 export default function UserPending() {
     const [pending, setPending] = useState(null);
@@ -87,6 +87,8 @@ export default function UserPending() {
                                     <Clock className="w-4 h-4 mr-1" />
                                     {statusInfo.text}
                                 </div>
+
+
                             </div>
                             <button
                                 onClick={() => handleCancel()}
@@ -105,7 +107,17 @@ export default function UserPending() {
                                     </>
                                 )}
                             </button>
+
                         </div>
+                        {pending.description && (
+                            <div className="mt-4 w-full">
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-h-[50vh] overflow-y-auto">
+                                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: pending.description }}>
+
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
 
                     </div>
