@@ -103,7 +103,7 @@ export const AuthProvider = ({ children }) => {
         // Try to notify server, but don't fail if it doesn't work
         if (token) {
             try {
-                const res = await fetch('http://localhost:8080/api/logout', {
+                const res = await fetch(`${apiUrl}/api/logout`, {
                     method: 'POST',
                     headers: {
                         'content-type': 'text/plain',
@@ -140,7 +140,7 @@ export const AuthProvider = ({ children }) => {
     const attemptRefresh = async () => {
 
         try {
-            const response = await fetch('http://localhost:8080/api/refresh', {
+            const response = await fetch(`${apiUrl}/api/refresh`, {
                 method: 'POST',
                 credentials: 'include', // Include cookies
             });
