@@ -1,6 +1,9 @@
 
 import { Mountain, ArrowRight, Target, TrendingUp, Users } from 'lucide-react';
+import imagePng from "../assets/image.png";
+import gptImage from "../assets/gptassistant.png";
 export default function Home() {
+    const imageUrl = `${import.meta.env.VITE_S3_URL}` || "../assets";
     return (<div className="min-h-screen bg-white">
         {/* Navigation */}
 
@@ -33,9 +36,8 @@ export default function Home() {
                     <div className="order-2 lg:order-1">
                         <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl h-96 flex items-center justify-center">
                             <div className="text-center">
-                                <Target className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-500 font-medium">AI Assistant Image</p>
-                                <p className="text-gray-400 text-sm">Will be added later</p>
+                                <img src={`${import.meta.env.VITE_S3_URL}/set-images/gptassistant1.png`} />
+
                             </div>
                         </div>
                     </div>
@@ -99,9 +101,8 @@ export default function Home() {
                     <div>
                         <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl h-96 flex items-center justify-center">
                             <div className="text-center">
-                                <TrendingUp className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-500 font-medium">Strength Assessment Image</p>
-                                <p className="text-gray-400 text-sm">Will be added later</p>
+
+                                <img src={`${import.meta.env.VITE_S3_URL}/set-images/gradebargraph.png`} />
                             </div>
                         </div>
                     </div>
