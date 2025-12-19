@@ -1,9 +1,13 @@
 
 import { Mountain, ArrowRight, Target, TrendingUp, Users } from 'lucide-react';
-import imagePng from "../assets/image.png";
-import gptImage from "../assets/gptassistant.png";
+
 export default function Home() {
-    const imageUrl = `${import.meta.env.VITE_S3_URL}` || "../assets";
+    const getImageUrl = (filename) => {
+        if (import.meta.env.DEV) {
+            return `/set-images/${filename}`;
+        }
+        return `${import.meta.env.VITE_S3_URL}/set-images/${filename}`;
+    };
     return (<div className="min-h-screen bg-white">
         {/* Navigation */}
 
@@ -36,7 +40,7 @@ export default function Home() {
                     <div className="order-2 lg:order-1">
                         <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl h-96 flex items-center justify-center">
                             <div className="text-center">
-                                <img src={`${import.meta.env.VITE_S3_URL}/set-images/gptassistant1.png`} />
+                                <img src={getImageUrl("gptassistant1.png")} />
 
                             </div>
                         </div>
@@ -102,7 +106,7 @@ export default function Home() {
                         <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl h-96 flex items-center justify-center">
                             <div className="text-center">
 
-                                <img src={`${import.meta.env.VITE_S3_URL}/set-images/gradebargraph.png`} />
+                                <img src={getImageUrl("gradebargraph.png")} />
                             </div>
                         </div>
                     </div>
