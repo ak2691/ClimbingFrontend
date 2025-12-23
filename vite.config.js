@@ -7,4 +7,13 @@ export default defineConfig({
   plugins: [react(),
   tailwindcss()
   ],
+  optimizeDeps: {
+    include: ['react-quilljs', 'quill']
+  },
+  build: {
+    commonjsOptions: {
+      include: [/react-quilljs/, /quill/, /node_modules/],
+      transformMixedEsModules: true
+    }
+  }
 })
